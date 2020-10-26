@@ -34,8 +34,8 @@ unsigned long int* DecimalToBinary(unsigned long int* result, int decimal,int bi
   }
   //printf("remainder: %ld\n", remainder);
   //printf("quotient: %ld\n", quotient);
-  printf("left: ");
-  read(result,bits);
+  //printf("left: ");
+  //read(result,bits);
   return result;
 }
 
@@ -54,8 +54,8 @@ unsigned long int* DecimalToFraction(unsigned long int* result, double number,in
     //printf("%ld\n", i);
     if(number==1.0) break;
   }
-  printf("right: ");
-  read(result,bits);
+  //printf("right: ");
+  //read(result,bits);
   return result;
 }
 
@@ -71,9 +71,9 @@ void movePoint(unsigned long int* mLeft, int leftsize, unsigned long int* mRight
       k++;
     }
   }
-  read(m,53);
-  printf("leftsize%d\n", leftsize);
-  printf("rightsize%d\n", rightsize);
+  //read(m,53);
+  //printf("leftsize%d\n", leftsize);
+  //printf("rightsize%d\n", rightsize);
 
   while(temp!=2){
     temp=m[++period];
@@ -101,9 +101,9 @@ void movePoint(unsigned long int* mLeft, int leftsize, unsigned long int* mRight
       }
     }
   }
-  printf("period%d\n", period);
-  printf("stop%d\n", stop);
-  printf("k%d\n", k);
+  //printf("period%d\n", period);
+  //printf("stop%d\n", stop);
+  //printf("k%d\n", k);
 
   if (k==-1) {
     for (size_t i = period; i != stop; i++) {
@@ -122,19 +122,27 @@ void movePoint(unsigned long int* mLeft, int leftsize, unsigned long int* mRight
   }
 
   for (size_t i = 0; i!=stop; i++) {
-    if(m[i]==0) m[i]=3;
-  }
-  printf("answer: ");
-  for (size_t i = 0; i<show+1; i++) {
-    if(m[i]==2) {
-      printf(".");
-      continue;
-    }else if(m[i]==3) continue;
-    printf("%lu", m[i]);
+    if(m[i]==0) {
+      m[i]=3;
+    }
   }
 
-  printf(" %d\n\n", e);
+  //printf("answer: ");
+  for (size_t i = 0; i<53; i++) {
+    if(m[i]==2) {
+      printf(".");
+      k=0;
+      for (j = i+1; k < show; j++) {
+        printf("%lu", m[j]);
+        k++;
+      }
+      break;
+    }if(m[i]==3) continue;
+    printf("%lu", m[i]);
+  }
+  printf(" %d\n", e);
   free(m);
+  return;
 }
 
 int main(int argc, char const *argv[argc+1]) {
@@ -148,12 +156,12 @@ int main(int argc, char const *argv[argc+1]) {
   double number=0;
   int bits=0;
   while (fscanf(f,"%lf %d",&number,&bits)!=EOF) {
-    printf("num: %f\n", number);
+    //printf("\nnum: %f\n", number);
     int integer_part = (int) number;
     double decimal_part = number - (double) integer_part;
 
-    if(decimal_part==0.0) {
-      printf("just do left side\n");
+    if(decimal_part<0) {
+      //printf("just do left side\n");
       unsigned long int* mLeft;
       int max=0, leftsize=1;
       while(max<number){
@@ -166,7 +174,9 @@ int main(int argc, char const *argv[argc+1]) {
     }
 
     unsigned long int* mRight;
-    int rightsize = log(1/decimal_part)/log(2);
+    int rightsize = 52;
+    //printf("decimal_part:%f\n", decimal_part);
+    //printf("rightsize:%d\n", rightsize);
     mRight = DecimalToFraction(mRight,decimal_part,rightsize);
 
     unsigned long int* mLeft;
