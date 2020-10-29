@@ -5,12 +5,24 @@
 
 void printBinary(signed long int decimal, signed long int bits){
   for (unsigned long int i = bits-1; i!=-1; i--) {
-    unsigned long int temp = 1lu<<i;
-    temp = temp & decimal;
-    temp = temp>>(i);
-    printf("%ld", temp);
+    unsigned long int mask = 1lu<<i;
+    mask = mask & decimal;
+    mask = mask>>(i);
+    printf("%ld", mask);
   }
   printf("\n");
+}
+
+signed long int roundMantissa(signed long int mantissa){
+  signed long int mask = 0b1111 & mantissa; //last four
+  signed long int g = mask & 0b0100;
+  signed long int s = mask & 0b0010;
+  signed long int r = mask & 0b0001;
+
+  if(g==0) mask = (0b1000 & mantissa) | 0b001;
+  if(g==1 && (r==1 || s==1)) mask = (0b1000 & mantissa) | 0b111;
+
+  return mask;
 }
 
 int main(int argc, char const *argv[argc+1]) {
@@ -21,14 +33,13 @@ int main(int argc, char const *argv[argc+1]) {
     return EXIT_SUCCESS;
   }
 
-  double number = 6.5;
-  signed long int bits = 8;
-  signed long int frac_bits = 4;
-  signed long int exp_bits = 3;
+  double number = 0;
+  signed long int bits = 0;
+  signed long int frac_bits = 0;
+  signed long int exp_bits = 0;
   signed long int sign=0;
-  signed long int answer=0b0;
 
-  while(fscanf(f,"%lf %ld %ld %ld",&number,&bits,&frac_bits,&exp_bits)!=EOF) {
+  while(fscanf(f,"%lf %ld %ld %ld",&number,&bits,&exp_bits,&frac_bits)!=EOF) {
     int e=0;
     if (number<0) {
       number=-(number);
@@ -39,6 +50,7 @@ int main(int argc, char const *argv[argc+1]) {
       e++;
     }
     if(number>1 && number<2) number-=1;
+    printf("e:%d\n", e);
 
     signed long int bias = (1lu << (exp_bits-1))-1;
     signed long int exponent = e + bias;
@@ -46,18 +58,17 @@ int main(int argc, char const *argv[argc+1]) {
     //mantissa
     signed long int mantissa = 0b0;
     int i=0;
-    printf("%f\n", number);
-    while(number!=number-number){ //needs changing around
-      number = number*2.0;
-      if(number >= 1) {
-        number-=1.0;
-        mantissa = (mantissa<<1)|(1<<0); //adds 1
-        i++;
-        continue;
-      }
-      i++;
-      mantissa = (mantissa<<1); //adds 0
-    }
+     while(number!=number-number){ //needs changing around
+       number = number*2.0;
+       if(number >= 1) {
+         number-=1.0;
+         mantissa = (mantissa<<1)|(1<<0); //adds 1
+         i++;
+         continue;
+       }
+       i++;
+       mantissa = (mantissa<<1); //adds 0
+     }
 
     //padding with zeros
     if (i!=frac_bits) {
@@ -65,58 +76,24 @@ int main(int argc, char const *argv[argc+1]) {
       mantissa=mantissa<<i;
     }
     printf("mantissa: ");
-    printBinary(mantissa,frac_bits);
+    printBinary(mantissa,frac_bits+2);
 
-    //tester
-    /*
-    int i=0;
-    while(i!=5){ //needs changing around
-      number = number*2.0;
-      printf("%f\n", number);
-      if(number >= 1) {
-        number-=1.0;
-        mantissa = (mantissa<<1)|(1<<0); //adds 1
-        i++;
-        continue;
-      }
-      mantissa = (mantissa<<1); //adds 0
-      i++;
-    }
-    */
+    //rounding mantissa
+    //mantissa = roundMantissa(mantissa) | (mantissa & 0b0000);
+    //printf("rounded mantissa: ");
+    //printBinary(mantissa,frac_bits);
 
+    //answer = (sign<<(bits-1)) | mantissa;
+    printf("sign: ");
+    printBinary(sign,bits-(exp_bits+frac_bits));
 
-    //exponent
-    mantissa = mantissa<<exp_bits;
-    for (signed long int i = exp_bits-1; i!=-1; i--) {
-      unsigned int temp = 1lu<<i;
-      temp = (temp & exponent);
-      if(temp<1) continue;
-      mantissa = mantissa | temp;
-    }
+    printf("exp: ");
+    printBinary(exponent,exp_bits);
 
-
-  /*
-    for (signed long int i = bits-2; i!=(bits-2)-frac_bits; i--) {
-      signed long int temp = 1lu<<i;
-      temp = temp & mantissa;
-      answer = answer | temp;
-    }
-  */
-
-    answer = (sign<<(bits-1)) | mantissa;
-    printf("answer: ");
-    printBinary(answer,bits);
-
-  /*
-    for (signed long int i = frac_bits-1; i!=-1; i--) {
-      signed long int temp = 1lu<<i;
-      temp = temp & mantissa;
-      temp = temp>>(i); //separates the grabbed binary
-      printf("temp%ld\n", temp);
-    }
-  */
-
-      //printf("%lu\n", mantissa);
+    //printBinary(sign,bits-(exp_bits+frac_bits));
+    //printBinary(mantissa,frac_bits);
+    //printBinary(exp,exp_bits);
+    //printf("\n");
   }
   return EXIT_SUCCESS;
 }
