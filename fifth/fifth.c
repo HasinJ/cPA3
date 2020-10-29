@@ -3,91 +3,14 @@
 #include<string.h>
 #include<math.h>
 
-int length=0;
-int e=0;
-unsigned long int mantissa = 0b0;
-
-void read(unsigned long int* result, int bits){
-  for (size_t i = 0; i<bits; i++) {
-    if(result[i]==2) {
-      printf(".");
-      continue;
-    }
-    printf("%lu", result[i]);
+void printBinary(signed long int decimal, signed long int bits){
+  for (unsigned long int i = bits-1; i!=-1; i--) {
+    unsigned long int temp = 1lu<<i;
+    temp = temp & decimal;
+    temp = temp>>(i);
+    printf("%ld", temp);
   }
   printf("\n");
-}
-
-void Mantissa(unsigned long int number) {
-  if(number==1) mantissa = (mantissa<<1)|(1<<0); //adds 1
-  if(number==0) mantissa = (mantissa<<1); //adds 0
-}
-
-void readBinary(unsigned long int decimal, unsigned long bits, int integer){
-  unsigned long int* result = calloc(64,sizeof(unsigned long int*));
-  unsigned long int quotient=decimal;
-  unsigned long int remainder=0;
-  for (size_t i = length-1; i!=-1; i--) {
-    remainder=quotient%2;
-    quotient=quotient/2;
-    if(quotient==0 && remainder==0) {
-      break;}
-    result[i]=remainder;
-  }
-  //read(result,bits);
-
-  int found=0,j=1;
-  for (size_t i = 0; j<bits; i++) {
-    if(result[i]==1 && found==0){
-      if(i==0 && e==0 && integer==0) e=i-1;
-      if(e==0 && integer==0) e=-(i+1);
-      printf("%lu", result[i]);
-      found=1;
-      printf(".");
-      continue;
-    }else if(found==0) continue;
-    Mantissa(result[i]);
-    printf("%lu", result[i]);
-    j++;
-  }
-  printf(" %d\n",e);
-  free(result);
-}
-
-unsigned long int DecimalToBinary(unsigned long int decimal, unsigned long bits){
-  unsigned long int key = 0b0;
-  unsigned long int quotient=decimal;
-  unsigned long int remainder=0;
-  for (size_t i = bits-1; i!=-1; i--) {
-    remainder=quotient%2;
-    quotient=quotient/2;
-    if(quotient==0 && remainder==0) {
-      break;}
-    if(remainder==1) key = (key<<1)|(1<<0); //adds 1
-    if(remainder==0) key = (key<<1); //adds 0
-    length++;
-  }
-  return key;
-
-}
-
-unsigned long int DecimalPart(unsigned long int key, double number){
-  while (number!=0.0) {
-    double product;
-    int integer_part;
-    product = number*2.0;
-    integer_part = (int) product;
-    if(integer_part==1) {
-      key = (key<<1)|(1<<0); //adds 1
-      number = product-1.0;
-    }else {
-      key = (key<<1); //adds 0
-      number = product;
-    }
-    length++;
-  }
-
-  return key;
 }
 
 int main(int argc, char const *argv[argc+1]) {
@@ -98,38 +21,102 @@ int main(int argc, char const *argv[argc+1]) {
     return EXIT_SUCCESS;
   }
 
-  double number = 6.25;
-  int frac_bits = 4;
-  int exp_bits = 3;
-  int sign=0;
-  //while(fscanf(f,"%lf %d",&number,&bits)!=EOF) {
-  e=0;
-  if (number<0) sign=1;
-  while(number>2){
-    number = number/2.0;
-    e++;
-  }
-  number-=1;
-  unsigned long int bias = (1lu << (exp_bits-1))-1;
-  unsigned long int exponent = e + bias;
-  printf("number: %f e: %d exponent: %lu sign: %d\n", number, e, exponent,sign);
+  double number = 6.5;
+  signed long int bits = 8;
+  signed long int frac_bits = 4;
+  signed long int exp_bits = 3;
+  signed long int sign=0;
+  signed long int answer=0b0;
 
-  unsigned long int mantissa = 0b0;
-  while(number!=1.0){
-    number = number*2.0;
-    if(number > 1) {
-      number-=1.0;
-      mantissa = (mantissa<<1)|(1<<0); //adds 1
-      continue;
+  while(fscanf(f,"%lf %ld %ld %ld",&number,&bits,&frac_bits,&exp_bits)!=EOF) {
+    int e=0;
+    if (number<0) {
+      number=-(number);
+      sign=1;
     }
-    mantissa = (mantissa<<1); //adds 0
-  }
-  while(frac_bits!=0){
-    
-    frac_bits--;
-  }
+    while(number>2){
+      number = number/2.0;
+      e++;
+    }
+    if(number>1 && number<2) number-=1;
 
-    //printf("%lu\n", mantissa);
-  //}
+    signed long int bias = (1lu << (exp_bits-1))-1;
+    signed long int exponent = e + bias;
+
+    //mantissa
+    signed long int mantissa = 0b0;
+    int i=0;
+    printf("%f\n", number);
+    while(number!=number-number){ //needs changing around
+      number = number*2.0;
+      if(number >= 1) {
+        number-=1.0;
+        mantissa = (mantissa<<1)|(1<<0); //adds 1
+        i++;
+        continue;
+      }
+      i++;
+      mantissa = (mantissa<<1); //adds 0
+    }
+
+    //padding with zeros
+    if (i!=frac_bits) {
+      i=frac_bits-i;
+      mantissa=mantissa<<i;
+    }
+    printf("mantissa: ");
+    printBinary(mantissa,frac_bits);
+
+    //tester
+    /*
+    int i=0;
+    while(i!=5){ //needs changing around
+      number = number*2.0;
+      printf("%f\n", number);
+      if(number >= 1) {
+        number-=1.0;
+        mantissa = (mantissa<<1)|(1<<0); //adds 1
+        i++;
+        continue;
+      }
+      mantissa = (mantissa<<1); //adds 0
+      i++;
+    }
+    */
+
+
+    //exponent
+    mantissa = mantissa<<exp_bits;
+    for (signed long int i = exp_bits-1; i!=-1; i--) {
+      unsigned int temp = 1lu<<i;
+      temp = (temp & exponent);
+      if(temp<1) continue;
+      mantissa = mantissa | temp;
+    }
+
+
+  /*
+    for (signed long int i = bits-2; i!=(bits-2)-frac_bits; i--) {
+      signed long int temp = 1lu<<i;
+      temp = temp & mantissa;
+      answer = answer | temp;
+    }
+  */
+
+    answer = (sign<<(bits-1)) | mantissa;
+    printf("answer: ");
+    printBinary(answer,bits);
+
+  /*
+    for (signed long int i = frac_bits-1; i!=-1; i--) {
+      signed long int temp = 1lu<<i;
+      temp = temp & mantissa;
+      temp = temp>>(i); //separates the grabbed binary
+      printf("temp%ld\n", temp);
+    }
+  */
+
+      //printf("%lu\n", mantissa);
+  }
   return EXIT_SUCCESS;
 }
